@@ -1,0 +1,22 @@
+name: Build extensions
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build against'
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release
+        uses: robinraju/release-downloader@v1.8
+        with:
+          tag: ${{ inputs.tag }}
+          fileName: ghidra_*.zip
+          extract: true
+
+      - name: List files
+        run: ls -laR
