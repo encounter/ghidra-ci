@@ -1,4 +1,4 @@
-name: Ghidra Build
+name: Build Ghidra
 
 on:
   workflow_dispatch:
@@ -38,14 +38,16 @@ jobs:
             os: macos-latest
       fail-fast: false
       
-    name: Build ${{ matrix.target }} Binaries
+    name: Build ${{ matrix.target }} binaries
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Ghidra repo
+        uses: actions/checkout@v4
         with:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.rev }}
-      - uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -58,11 +60,12 @@ jobs:
           Rename-Item -Path "$pwd\winflexbison\win_bison.exe" -NewName "bison.exe"
           Rename-Item -Path "$pwd\winflexbison\win_flex.exe" -NewName "flex.exe"
           "$pwd\winflexbison" >> $env:GITHUB_PATH
-      - name: Checkout Ghidra-CI Repo
+      - name: Checkout ghidra-ci repo
         uses: actions/checkout@v4
         with:
           path: ghidra-ci
-      - uses: gradle/gradle-build-action@v2
+      - name: Fetch Ghidra dependencies
+        uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: --console=rich --init-script gradle/support/fetchDependencies.gradle init
@@ -73,16 +76,17 @@ jobs:
           sudo apt-get install g++-aarch64-linux-gnu libc6-dev-arm64-cross
           mkdir -p $HOME/.gradle
           cp ghidra-ci/linux_arm_64.init.gradle $HOME/.gradle/init.gradle
-      - name: Setup MacOS ARM toolchain
+      - name: Setup macOS ARM toolchain
         if: ${{ matrix.target == 'mac_arm_64' }}
         run: |
           mkdir -p $HOME/.gradle
           cp ghidra-ci/mac_arm_64.init.gradle $HOME/.gradle/init.gradle
-      - uses: gradle/gradle-build-action@v2
+      - name: Build native binaries
+        uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: --console=rich buildNatives_${{ matrix.target }}
-      - name: "Sign macOS binaries"
+      - name: Sign macOS binaries
         if: ${{ env.MACOS_CODESIGN_CRT_PWD != '' && startsWith(matrix.target, 'mac_') }}
         run: |
           echo "$MACOS_CODESIGN_CRT" | base64 -d > certificate.p12
@@ -109,7 +113,7 @@ jobs:
       - name: Tar the binaries
         run: tar -cvf "${{ matrix.target }}.build.tar" $(find . -path "*/build/os/${{ matrix.target }}/*" -type f)
         shell: bash
-      - name: "Notarize macOS binaries"
+      - name: Notarize macOS binaries
         if: ${{ env.MACOS_APPLE_USERNAME != '' && (matrix.target == 'mac_arm_64' || matrix.target == 'mac_x86_64') }}
         run: |
           for file in $(find . -path "*/build/os/${{ matrix.target }}/*" -type f); do
@@ -129,11 +133,12 @@ jobs:
           path: "${{ matrix.target }}.build.tar"
 
   dist:
-    name: "Build Ghidra distributable zip"
+    name: Build Ghidra distribution
     needs: ["build-natives"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Ghidra repo
+        uses: actions/checkout@v4
         with:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.rev }}
@@ -152,11 +157,12 @@ jobs:
             tar xvf "$file"
           done
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
-      - name: Fetch the Ghidra dependencies.
+      - name: Fetch Ghidra dependencies
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
@@ -167,19 +173,19 @@ jobs:
         with:
           repository: NationalSecurityAgency/ghidra-data
           path: 'ghidra-data'
-      - name: Copy ghidra-data files into the appropriate directories
+      - name: Copy ghidra-data files
         run: cp -r ghidra-data/FunctionID/* Ghidra/Features/FunctionID/data
-      - name: Build ghidra, create a cross-platform distribution
+      - name: Build Ghidra
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: --console=rich -x ip -PallPlatforms buildGhidra
       # TODO: remove upload-artifact when create release is sure to work
-      - name: Upload final dist
+      - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:
           path: "build/dist/*"
-      - name: Remove temporary artifacts
+      - name: Delete temporary artifacts
         uses: geekyeggo/delete-artifact@v4
         with:
           name: natives-*
@@ -189,7 +195,8 @@ jobs:
           echo date=$(date +'%Y-%m-%d') >> $GITHUB_OUTPUT
           echo dist=$(ls build/dist) >> $GITHUB_OUTPUT
           echo rev=$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v4
+      - name: Checkout ghidra-ci
+        uses: actions/checkout@v4
         with:
           path: ghidra-ci
       - name: Generate CHANGELOG.md
