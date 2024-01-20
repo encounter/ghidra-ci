@@ -61,7 +61,9 @@ jobs:
 
       - name: Build extension
         working-directory: ${{ env.REPO_NAME }}
-        run: gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
