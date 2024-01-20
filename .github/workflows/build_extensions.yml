@@ -47,6 +47,12 @@ jobs:
           repository: ${{ matrix.repo }}
           path: ${{ env.REPO_NAME }}
 
+      # Remove conflicting language files from GameCube loader
+      - name: Fixup extension
+        if: matrix.repo == 'Cuyler36/Ghidra-GameCube-Loader'
+        working-directory: ${{ env.REPO_NAME }}
+        run: rm -r data
+
       - name: Build extension
         working-directory: ${{ env.REPO_NAME }}
         run: |
