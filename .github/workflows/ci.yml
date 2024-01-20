@@ -234,8 +234,8 @@ jobs:
         if: ${{ inputs.prevRev == '' }}
         run: |
           cd ghidra-ci
-          echo "# Changelog\n" > CHANGELOG.md
-          echo "Built from [${{ inputs.repo }}@${{ inputs.rev }}](https://github.com/${{ inputs.repo }}/commit/${{ inputs.rev }})" >> CHANGELOG.md
+          echo "# Changelog" > CHANGELOG.md
+          echo "Built from [${{ inputs.repo }}@${{ inputs.rev }}](https://github.com/${{ inputs.repo }}/commits/${{ inputs.rev }})" >> CHANGELOG.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
