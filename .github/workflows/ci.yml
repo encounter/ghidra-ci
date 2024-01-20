@@ -52,6 +52,11 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
       - name: Install bison
         if: ${{ matrix.os == 'windows-latest' }}
         shell: pwsh
@@ -70,10 +75,7 @@ jobs:
           path: ghidra-ci
 
       - name: Fetch Ghidra dependencies
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: --init-script gradle/support/fetchDependencies.gradle init
+        run: gradle --init-script gradle/support/fetchDependencies.gradle init
 
       - name: Setup Linux ARM toolchain
         if: ${{ matrix.target == 'linux_arm_64' }}
@@ -90,10 +92,7 @@ jobs:
           cp ghidra-ci/mac_arm_64.init.gradle $HOME/.gradle/init.gradle
 
       - name: Build native binaries
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: buildNatives_${{ matrix.target }}
+        run: gradle buildNatives_${{ matrix.target }}
 
       - name: Sign macOS binaries
         if: ${{ env.MACOS_CODESIGN_CRT_PWD != '' && startsWith(matrix.target, 'mac_') }}
@@ -180,11 +179,13 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Fetch Ghidra dependencies
+      - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: --init-script gradle/support/fetchDependencies.gradle init
+
+      - name: Fetch Ghidra dependencies
+        run: gradle --init-script gradle/support/fetchDependencies.gradle init
 
       # TODO: Pre-build GhidraDev
 
@@ -198,10 +199,7 @@ jobs:
         run: cp -r ghidra-data/FunctionID/* Ghidra/Features/FunctionID/data
 
       - name: Build Ghidra
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: -x ip -PallPlatforms buildGhidra
+        run: gradle -x ip -PallPlatforms buildGhidra
 
       # TODO: remove upload-artifact when create release is sure to work
       - name: Upload distribution

@@ -1,7 +1,5 @@
-const { symlinkSync } = require("fs");
 const NodeGit = require("nodegit");
 const path = require("path");
-const { stderr } = require("process");
 
 async function main() {
     const repoName = process.argv[2];
@@ -71,24 +69,24 @@ async function main() {
     for (let change of graph) {
         if (change.type == "merge") {
             if (change.children.length === 1) {
-                generatedMarkdown += formatCommit(change.children[0], false);
+                generatedMarkdown += formatCommit(repoName, change.children[0], false);
             } else {
-                generatedMarkdown += formatCommit(change, false)
+                generatedMarkdown += formatCommit(repoName, change, false)
                 generatedMarkdown += "\n  <details><summary>Commit details</summary>\n\n"
                 for (let innerChange of change.children) {
-                    generatedMarkdown += "    " + formatCommit(innerChange, true);
+                    generatedMarkdown += "    " + formatCommit(repoName, innerChange, true);
                 }
                 generatedMarkdown += "  </details>\n";
             }
         } else {
-            generatedMarkdown += formatCommit(change, false);
+            generatedMarkdown += formatCommit(repoName, change, false);
         }
     }
 
     console.log(generatedMarkdown);
 }
 
-function formatCommit(change, isChild) {
+function formatCommit(repoName, change, isChild) {
     let replaceWithSpaces = isChild ? "\n      " : "\n  ";
     const linkSha = `[${change.sha.slice(0, 8)}](https://github.com/${repoName}/commit/${change.sha})`
     return "- " + linkSha + " " + change.message.trim().split("\n").join(replaceWithSpaces) + "\n";
