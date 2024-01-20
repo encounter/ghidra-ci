@@ -17,7 +17,6 @@ on:
 env:
   JAVA_VERSION: 17
   GRADLE_VERSION: 8.5
-  WINFLEXBISON_VERSION: 2.5.25
 
 jobs:
   build-natives:
@@ -54,9 +53,11 @@ jobs:
       - name: Install bison
         if: ${{ matrix.os == 'windows-latest' }}
         shell: pwsh
+        env:
+          VERSION: 2.5.25
         run: |
-          Invoke-WebRequest -URI "https://github.com/lexxmark/winflexbison/releases/download/v$env:WINFLEXBISON_VERSION/win_flex_bison-$env:WINFLEXBISON_VERSION.zip" -OutFile "win_flex_bison-$env:WINFLEXBISON_VERSION.zip"
-          Expand-Archive -Path "win_flex_bison-$env:WINFLEXBISON_VERSION.zip" -DestinationPath "winflexbison"
+          Invoke-WebRequest -URI "https://github.com/lexxmark/winflexbison/releases/download/v$env:VERSION/win_flex_bison-$env:VERSION.zip" -OutFile "win_flex_bison-$env:VERSION.zip"
+          Expand-Archive -Path "win_flex_bison-$env:VERSION.zip" -DestinationPath "winflexbison"
           Rename-Item -Path "$pwd\winflexbison\win_bison.exe" -NewName "bison.exe"
           Rename-Item -Path "$pwd\winflexbison\win_flex.exe" -NewName "flex.exe"
           "$pwd\winflexbison" >> $env:GITHUB_PATH
@@ -68,7 +69,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: --console=rich --init-script gradle/support/fetchDependencies.gradle init
+          arguments: --init-script gradle/support/fetchDependencies.gradle init
       - name: Setup Linux ARM toolchain
         if: ${{ matrix.target == 'linux_arm_64' }}
         run: |
@@ -85,7 +86,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: --console=rich buildNatives_${{ matrix.target }}
+          arguments: buildNatives_${{ matrix.target }}
       - name: Sign macOS binaries
         if: ${{ env.MACOS_CODESIGN_CRT_PWD != '' && startsWith(matrix.target, 'mac_') }}
         run: |
@@ -166,7 +167,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: --console=rich --init-script gradle/support/fetchDependencies.gradle init
+          arguments: --init-script gradle/support/fetchDependencies.gradle init
       # TODO: Pre-build GhidraDev
       - name: Checkout ghidra-data
         uses: actions/checkout@v4
@@ -179,7 +180,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
-          arguments: --console=rich -x ip -PallPlatforms buildGhidra
+          arguments: -x ip -PallPlatforms buildGhidra
       # TODO: remove upload-artifact when create release is sure to work
       - name: Upload distribution
         uses: actions/upload-artifact@v4
@@ -200,6 +201,7 @@ jobs:
         with:
           path: ghidra-ci
       - name: Generate CHANGELOG.md
+        if: ${{ inputs.prevRev != '' }}
         run: |
           cd ghidra-ci
           sudo apt-get update
@@ -212,4 +214,7 @@ jobs:
           tag_name: ${{ steps.date.outputs.date }}
           name: Release ${{ steps.date.outputs.date }}(${{ steps.date.outputs.rev }})
           body_path: ghidra-ci/CHANGELOG.md
+          # Fallback body if CHANGELOG.md doesn't exist
+          body: |
+            Built from https://github.com/${{ inputs.repo }}/commit/${{ steps.date.outputs.rev }}
           files: build/dist/${{ steps.date.outputs.dist }}
