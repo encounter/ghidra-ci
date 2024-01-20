@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       repo:
-        description: 'Ghidra GitHub repository'
-        default: 'RootCubed/ghidra'
+        description: Ghidra GitHub repository
+        default: RootCubed/ghidra
         required: true
       prevRev:
-        description: 'Revision of the previous release'
+        description: Revision of the previous release
         required: false
       rev:
-        description: 'Revision to build'
+        description: Revision to build
         required: true
 
 env:
@@ -36,7 +36,7 @@ jobs:
           - target: mac_arm_64
             os: macos-latest
       fail-fast: false
-      
+
     name: Build ${{ matrix.target }} binaries
     runs-on: ${{ matrix.os }}
     steps:
@@ -45,11 +45,13 @@ jobs:
         with:
           repository: ${{ inputs.repo }}
           ref: ${{ inputs.rev }}
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+
       - name: Install bison
         if: ${{ matrix.os == 'windows-latest' }}
         shell: pwsh
@@ -61,15 +63,18 @@ jobs:
           Rename-Item -Path "$pwd\winflexbison\win_bison.exe" -NewName "bison.exe"
           Rename-Item -Path "$pwd\winflexbison\win_flex.exe" -NewName "flex.exe"
           "$pwd\winflexbison" >> $env:GITHUB_PATH
+
       - name: Checkout ghidra-ci repo
         uses: actions/checkout@v4
         with:
           path: ghidra-ci
+
       - name: Fetch Ghidra dependencies
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: --init-script gradle/support/fetchDependencies.gradle init
+
       - name: Setup Linux ARM toolchain
         if: ${{ matrix.target == 'linux_arm_64' }}
         run: |
@@ -77,16 +82,19 @@ jobs:
           sudo apt-get install g++-aarch64-linux-gnu libc6-dev-arm64-cross
           mkdir -p $HOME/.gradle
           cp ghidra-ci/linux_arm_64.init.gradle $HOME/.gradle/init.gradle
+
       - name: Setup macOS ARM toolchain
         if: ${{ matrix.target == 'mac_arm_64' }}
         run: |
           mkdir -p $HOME/.gradle
           cp ghidra-ci/mac_arm_64.init.gradle $HOME/.gradle/init.gradle
+
       - name: Build native binaries
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: buildNatives_${{ matrix.target }}
+
       - name: Sign macOS binaries
         if: ${{ env.MACOS_CODESIGN_CRT_PWD != '' && startsWith(matrix.target, 'mac_') }}
         run: |
@@ -108,12 +116,14 @@ jobs:
           MACOS_CODESIGN_CRT: ${{ secrets.MACOS_CODESIGN_CRT }}
           MACOS_CODESIGN_CRT_PWD: ${{ secrets.MACOS_CODESIGN_CRT_PWD }}
           MACOS_CODESIGN_CRT_IDENTITY: ${{ secrets.MACOS_CODESIGN_CRT_IDENTITY }}
+
       # Apparently, github is an incompetent idiot that can't handle permissions
       # properly. https://github.com/actions/upload-artifact/issues/38
       # Wrap the binaries in a tar archive to fix that.
       - name: Tar the binaries
         run: tar -cvf "${{ matrix.target }}.build.tar" $(find . -path "*/build/os/${{ matrix.target }}/*" -type f)
         shell: bash
+
       - name: Notarize macOS binaries
         if: ${{ env.MACOS_APPLE_USERNAME != '' && (matrix.target == 'mac_arm_64' || matrix.target == 'mac_x86_64') }}
         run: |
@@ -127,15 +137,16 @@ jobs:
           MACOS_APPLE_USERNAME: ${{ secrets.MACOS_APPLE_USERNAME }}
           MACOS_APPLE_PASSWORD: ${{ secrets.MACOS_APPLE_PASSWORD }}
           MACOS_APPLE_TEAMID: ${{ secrets.MACOS_APPLE_TEAMID }}
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: natives-${{ matrix.target }}
-          path: "${{ matrix.target }}.build.tar"
+          path: ${{ matrix.target }}.build.tar
 
-  dist:
+  build-ghidra:
     name: Build Ghidra distribution
-    needs: ["build-natives"]
+    needs: [build-natives]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ghidra repo
@@ -151,6 +162,11 @@ jobs:
           pattern: natives-*
           merge-multiple: true
 
+      - name: Delete temporary artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          name: natives-*
+
       - name: Extract all binaries
         run: |
           for file in *.build.tar; do
@@ -163,43 +179,48 @@ jobs:
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
+
       - name: Fetch Ghidra dependencies
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: --init-script gradle/support/fetchDependencies.gradle init
+
       # TODO: Pre-build GhidraDev
+
       - name: Checkout ghidra-data
         uses: actions/checkout@v4
         with:
           repository: NationalSecurityAgency/ghidra-data
-          path: 'ghidra-data'
+          path: ghidra-data
+
       - name: Copy ghidra-data files
         run: cp -r ghidra-data/FunctionID/* Ghidra/Features/FunctionID/data
+
       - name: Build Ghidra
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
           arguments: -x ip -PallPlatforms buildGhidra
+
       # TODO: remove upload-artifact when create release is sure to work
       - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:
-          path: "build/dist/*"
-      - name: Delete temporary artifacts
-        uses: geekyeggo/delete-artifact@v4
-        with:
-          name: natives-*
+          path: build/dist/*
+
       - name: Get current date, rev and dist name
         id: date
         run: |
           echo date=$(date +'%Y-%m-%d') >> $GITHUB_OUTPUT
           echo dist=$(ls build/dist) >> $GITHUB_OUTPUT
           echo rev=$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT
+
       - name: Checkout ghidra-ci
         uses: actions/checkout@v4
         with:
           path: ghidra-ci
+
       - name: Generate CHANGELOG.md
         if: ${{ inputs.prevRev != '' }}
         run: |
@@ -208,13 +229,18 @@ jobs:
           sudo apt-get install libkrb5-dev
           npm i
           node generate_changelog.js ${{ inputs.repo }} ${{ inputs.prevRev }} ${{ inputs.rev }} > CHANGELOG.md
+
+      - name: Generate fallback CHANGELOG.md
+        if: ${{ inputs.prevRev == '' }}
+        run: |
+          cd ghidra-ci
+          echo "# Changelog\n" > CHANGELOG.md
+          echo "Built from [${{ inputs.repo }}@${{ inputs.rev }}](https://github.com/${{ inputs.repo }}/commit/${{ inputs.rev }})" >> CHANGELOG.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.date.outputs.date }}
           name: Release ${{ steps.date.outputs.date }}(${{ steps.date.outputs.rev }})
           body_path: ghidra-ci/CHANGELOG.md
-          # Fallback body if CHANGELOG.md doesn't exist
-          body: |
-            Built from https://github.com/${{ inputs.repo }}/commit/${{ steps.date.outputs.rev }}
           files: build/dist/${{ steps.date.outputs.dist }}
