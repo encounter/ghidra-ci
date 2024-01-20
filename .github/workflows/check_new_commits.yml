@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: NationalSecurityAgency/Ghidra
+          repository: RootCubed/Ghidra
       - name: Check for new commits
         id: check
         run: |

@@ -65,7 +65,7 @@ async function main() {
 
     var generatedMarkdown = "# Changelog\n\n";
 
-    generatedMarkdown += `Commit range: [${commitFrom}..${commitTo}](https://github.com/NationalSecurityAgency/ghidra/compare/${commitFrom}...${commitTo})\n\n`;
+    generatedMarkdown += `Commit range: [${commitFrom}..${commitTo}](https://github.com/RootCubed/ghidra/compare/${commitFrom}...${commitTo})\n\n`;
 
     for (let change of graph) {
         if (change.type == "merge") {
@@ -89,7 +89,7 @@ async function main() {
 
 function formatCommit(change, isChild) {
     let replaceWithSpaces = isChild ? "\n      " : "\n  ";
-    const linkSha = `[${change.sha.slice(0, 8)}](https://github.com/NationalSecurityAgency/ghidra/commit/${change.sha})`
+    const linkSha = `[${change.sha.slice(0, 8)}](https://github.com/RootCubed/ghidra/commit/${change.sha})`
     return "- " + linkSha + " " + change.message.trim().split("\n").join(replaceWithSpaces) + "\n";
 }
 

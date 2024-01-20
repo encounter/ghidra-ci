@@ -1,8 +1,8 @@
-# Ghidra CI
+# (RootCubed) Ghidra CI
 
-Here, you'll find nightly builds of the NSA's [Ghidra], a Software Reverse
-Engineering framework. In particular, it creates a single cross-platform ZIP
-as close as possible to the official builds.
+This repository automatically builds RootCubed's fork of [Ghidra].
+
+For upstream Ghidra, see the original [ghidra-ci] repository.
 
 ## How it works.
 
@@ -54,7 +54,8 @@ There are several improvements to be made:
 
 
 [.github/workflows]: .github/workflows
-[Ghidra]: https://github.com/NationalSecurityAgency/ghidra
+[Ghidra]: https://github.com/RootCubed/ghidra
+[ghidra-ci]: https://github.com/roblabla/ghidra-ci
 [ghidra-data]: https://github.com/NationalSecurityAgency/ghidra-data
 [Github disabling workflows after two months of inactivity]: https://docs.github.com/en/actions/managing-workflow-runs/disabling-and-enabling-a-workflow
 [`workflow_dispatch`]: https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow

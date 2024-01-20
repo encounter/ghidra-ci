@@ -6,7 +6,7 @@ on:
         description: 'Revision of the previous release'
         required: false
       rev:
-        description: 'NationalSecurityAgency/ghidra commit to build'
+        description: 'RootCubed/ghidra commit to build'
         required: true
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: NationalSecurityAgency/Ghidra
+          repository: RootCubed/Ghidra
           ref: ${{ github.event.inputs.rev }}
       - uses: actions/setup-java@v3
         with:
@@ -51,7 +51,7 @@ jobs:
       - name: Checkout Ghidra-CI Repo
         uses: actions/checkout@v4
         with:
-          path: ghidra-ci-roblabla
+          path: ghidra-ci-rootcubed
       - uses: eskatos/gradle-command-action@v2
         with:
           gradle-version: 7.3.3
@@ -62,12 +62,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install g++-aarch64-linux-gnu libc6-dev-arm64-cross
           mkdir -p $HOME/.gradle
-          cp ghidra-ci-roblabla/linux_arm_64.init.gradle $HOME/.gradle/init.gradle
+          cp ghidra-ci-rootcubed/linux_arm_64.init.gradle $HOME/.gradle/init.gradle
       - name: Setup MacOS ARM toolchain
         if: ${{ matrix.target == 'mac_arm_64' }}
         run: |
           mkdir -p $HOME/.gradle
-          cp ghidra-ci-roblabla/mac_arm_64.init.gradle $HOME/.gradle/init.gradle
+          cp ghidra-ci-rootcubed/mac_arm_64.init.gradle $HOME/.gradle/init.gradle
       - uses: eskatos/gradle-command-action@v2
         with:
           gradle-version: 7.3.3
@@ -125,7 +125,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: NationalSecurityAgency/Ghidra
+          repository: RootCubed/Ghidra
           ref: ${{ github.event.inputs.rev }}
           fetch-depth: 0
           
@@ -211,10 +211,10 @@ jobs:
           echo rev=$(git rev-parse --short HEAD) >> $GITHUB_OUTPUT
       - uses: actions/checkout@v4
         with:
-          path: ghidra-ci-roblabla
+          path: ghidra-ci-rootcubed
       - name: Generate CHANGELOG.md
         run: |
-          cd ghidra-ci-roblabla
+          cd ghidra-ci-rootcubed
           sudo apt-get update
           sudo apt-get install libkrb5-dev
           npm i
@@ -227,7 +227,7 @@ jobs:
         with:
           tag_name: ${{ steps.date.outputs.date }}
           release_name: Release ${{ steps.date.outputs.date }}(${{ steps.date.outputs.rev }})
-          body_path: ./ghidra-ci-roblabla/CHANGELOG.md
+          body_path: ./ghidra-ci-rootcubed/CHANGELOG.md
           # TODO: This is a horrible hack.
           commitish: "master"
           draft: false

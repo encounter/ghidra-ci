@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/roblabla/ghidra.git"
+    "url": "git+https://github.com/RootCubed/ghidra.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/roblabla/ghidra/issues"
+    "url": "https://github.com/RootCubed/ghidra/issues"
   },
-  "homepage": "https://github.com/roblabla/ghidra#readme",
+  "homepage": "https://github.com/RootCubed/ghidra#readme",
   "dependencies": {
     "nodegit": "^0.27.0"
   }
