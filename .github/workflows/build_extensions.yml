@@ -19,6 +19,7 @@ jobs:
           - Cuyler36/Ghidra-GameCube-Loader
           - Adubbz/Ghidra-Switch-Loader
           - Maschell/GhidraRPXLoader
+      fail-fast: false
 
     runs-on: ubuntu-latest
     steps:
@@ -55,7 +56,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.REPO_NAME }}
+          name: ${{ env.REPO_NAME }}-${{ inputs.tag }}
           path: ${{ env.REPO_NAME }}/dist/*.zip
 
       - name: Add artifact to release
