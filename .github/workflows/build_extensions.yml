@@ -15,10 +15,13 @@ jobs:
     name: Build extension
     strategy:
       matrix:
-        repo:
-          - Cuyler36/Ghidra-GameCube-Loader
-          - Adubbz/Ghidra-Switch-Loader
-          - Maschell/GhidraRPXLoader
+        include:
+          - repo: Cuyler36/Ghidra-GameCube-Loader
+            ref: rootcubed
+          - repo: Adubbz/Ghidra-Switch-Loader
+            ref: master
+          - repo: Maschell/GhidraRPXLoader
+            ref: main
       fail-fast: false
 
     runs-on: ubuntu-latest
@@ -39,6 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ matrix.repo }}
+          ref: ${{ matrix.ref }}
           path: ${{ env.REPO_NAME }}
 
       - name: Setup Java
@@ -52,12 +56,6 @@ jobs:
         with:
           build-root-directory: ${{ env.REPO_NAME }}
           gradle-version: wrapper
-
-      # Remove conflicting language files from GameCube loader
-      - name: Fixup extension
-        if: matrix.repo == 'Cuyler36/Ghidra-GameCube-Loader'
-        working-directory: ${{ env.REPO_NAME }}
-        run: rm -r data
 
       - name: Build extension
         working-directory: ${{ env.REPO_NAME }}
