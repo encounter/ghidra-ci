@@ -55,7 +55,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           build-root-directory: ${{ env.REPO_NAME }}
-          gradle-version: 8.10
+          gradle-version: "8.10"
 
       - name: Build extension
         working-directory: ${{ env.REPO_NAME }}
